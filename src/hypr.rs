@@ -10,7 +10,7 @@ type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 #[derive(Serialize, Deserialize)]
 struct Workspace {
-    id: u32,
+    id: usize,
     name: String,
     monitor: String,
     #[serde(rename = "monitorID")]
@@ -49,9 +49,21 @@ fn active_workspace() -> Result<Workspace> {
     Ok(ws)
 }
 
+fn workspaces() -> Result<Vec<Workspace>> {
+    let res = control("workspaces")?;
+    let wss: Vec<Workspace> = serde_json::from_str(&res)?;
+    Ok(wss)
+}
+
+fn n_workspaces() -> Result<usize> {
+    let wss = workspaces()?;
+    let max_id = wss.iter().map(|x| x.id).max().unwrap();
+    Ok(max_id)
+}
+
 pub async fn listen(barc: Arc<Mutex<Bar>>) {
-    let ws = active_workspace().expect("Cannot get active workspace");
-    barc.lock().unwrap().set_workspace_id(ws.id);
+    barc.lock().unwrap().set_workspace_id(active_workspace().unwrap().id);
+    barc.lock().unwrap().set_n_workspaces(n_workspaces().unwrap());
     let prefix = socket_prefix().expect("Cannot get Hyprland socket path");
     let path = prefix + "/.socket2.sock";
     let hyprsocket = UnixStream::connect(path)
@@ -65,6 +77,10 @@ pub async fn listen(barc: Arc<Mutex<Bar>>) {
                 .lock()
                 .unwrap()
                 .set_workspace_id(value.parse().unwrap()),
+            "createworkspace" => barc
+                .lock()
+                .unwrap()
+                .set_n_workspaces(n_workspaces().unwrap()),
             _ => ()
         }
     }

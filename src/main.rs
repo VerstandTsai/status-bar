@@ -5,6 +5,7 @@ mod device;
 use bar::Bar;
 use std::env;
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 use tokio;
 
 #[tokio::main]
@@ -14,6 +15,9 @@ async fn main() {
     let barc = Arc::new(Mutex::new(Bar::new(width)));
     tokio::spawn(hypr::listen(barc.clone()));
     tokio::spawn(battery::listen(barc.clone()));
-    std::thread::park();
+    loop {
+        barc.lock().unwrap().draw();
+        tokio::time::sleep(Duration::from_secs(1)).await;
+    }
 }
 

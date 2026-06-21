@@ -1,11 +1,12 @@
 use std::io::{prelude::*, stdout};
-
+use chrono::Local;
 use crate::battery::Battery;
 
 pub struct Bar {
     width: usize,
-    workspace_id: u32,
-    battery: Battery
+    n_workspaces: usize,
+    workspace_id: usize,
+    battery: Battery,
 }
 
 impl Bar {
@@ -13,8 +14,22 @@ impl Bar {
         Bar {
             width: width,
             workspace_id: 1,
-            battery: Battery::new()
+            n_workspaces: 1,
+            battery: Battery::new(),
         }
+    }
+
+    fn draw_workspace(&self) -> String {
+        let mut s = String::new();
+        for i in 1..self.n_workspaces + 1 {
+            s = s + if i == self.workspace_id { "  " } else { "  " };
+        }
+        s
+    }
+
+    fn draw_datetime(&self) -> String {
+        let now = Local::now();
+        format!(" {} ", now.format("%Y/%m/%d (%a) %H:%M:%S"))
     }
 
     fn draw_battery(&self) -> String {
@@ -22,20 +37,27 @@ impl Bar {
         let icons1 = ["󰢟", "󰢜", "󰂆", "󰂇", "󰂈", "󰢝", "󰂉", "󰢞", "󰂊", "󰂋", "󰂅"];
         let i = self.battery.percentage / 10;
         let icon = if self.battery.charging { icons1[i] } else { icons0[i] };
-        format!("{} {}%", icon, self.battery.percentage)
+        format!(" {} {}% ", icon, self.battery.percentage)
     }
 
-    fn draw(&self) {
-        let ws = self.workspace_id.to_string();
+    pub fn draw(&self) {
+        let ws = self.draw_workspace();
         let bat = self.draw_battery();
-        let pad_size = self.width - ws.chars().count() - bat.chars().count();
-        let pad = " ".repeat(pad_size);
-        print!("\x1b[?25l\r{}{}{}", ws, pad, bat);
+        let dt = self.draw_datetime();
+        let rest = (self.width - dt.chars().count()) / 2;
+        let lpad = " ".repeat(rest - ws.chars().count());
+        let rpad = " ".repeat(rest - bat.chars().count());
+        print!("\x1b[?25l\r{}{}{}{}{}", ws, lpad, dt, rpad, bat);
         stdout().flush().unwrap();
     }
 
-    pub fn set_workspace_id(&mut self, id: u32) {
+    pub fn set_workspace_id(&mut self, id: usize) {
         self.workspace_id = id;
+        self.draw();
+    }
+
+    pub fn set_n_workspaces(&mut self, n: usize) {
+        self.n_workspaces = n;
         self.draw();
     }
 

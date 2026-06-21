@@ -28,7 +28,8 @@ impl Bar {
     fn draw(&self) {
         let ws = self.workspace_id.to_string();
         let bat = self.draw_battery();
-        let pad = " ".repeat(self.width - ws.len() - bat.len());
+        let pad_size = self.width - ws.chars().count() - bat.chars().count();
+        let pad = " ".repeat(pad_size);
         print!("\x1b[?25l\r{}{}{}", ws, pad, bat);
         stdout().flush().unwrap();
     }

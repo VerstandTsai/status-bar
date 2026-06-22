@@ -1,12 +1,14 @@
 use std::io::{prelude::*, stdout};
 use chrono::Local;
 use crate::battery::Battery;
+use crate::wifi::WiFi;
 
 pub struct Bar {
     width: usize,
     n_workspaces: usize,
     workspace_id: usize,
     battery: Battery,
+    wifi: WiFi
 }
 
 impl Bar {
@@ -16,6 +18,7 @@ impl Bar {
             workspace_id: 1,
             n_workspaces: 1,
             battery: Battery::new(),
+            wifi: WiFi::new()
         }
     }
 
@@ -32,6 +35,12 @@ impl Bar {
         format!(" {} ", now.format("%Y/%m/%d (%a) %H:%M:%S"))
     }
 
+    fn draw_wifi(&self) -> String {
+        let icons = ["󰤟", "󰤢", "󰤥", "󰤨", "󰤨"];
+        let i = self.wifi.strength / 25;
+        format!(" {} {} ", icons[i as usize], self.wifi.id)
+    }
+
     fn draw_battery(&self) -> String {
         let icons0 = ["󰂎", "󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"];
         let icons1 = ["󰢟", "󰢜", "󰂆", "󰂇", "󰂈", "󰢝", "󰂉", "󰢞", "󰂊", "󰂋", "󰂅"];
@@ -42,12 +51,16 @@ impl Bar {
 
     pub fn draw(&self) {
         let ws = self.draw_workspace();
-        let bat = self.draw_battery();
         let dt = self.draw_datetime();
-        let rest = (self.width - dt.chars().count()) / 2;
-        let lpad = " ".repeat(rest - ws.chars().count());
-        let rpad = " ".repeat(rest - bat.chars().count());
-        print!("\x1b[?25l\r{}{}{}{}{}", ws, lpad, dt, rpad, bat);
+        let wifi = self.draw_wifi();
+        let bat = self.draw_battery();
+        let left = format!("{ws}");
+        let center = format!("{dt}");
+        let right = format!("{wifi}{bat}");
+        let rest = (self.width - center.chars().count()) / 2;
+        let lpad = " ".repeat(rest - left.chars().count());
+        let rpad = " ".repeat(rest - right.chars().count());
+        print!("\x1b[?25l\r{left}{lpad}{center}{rpad}{right}");
         stdout().flush().unwrap();
     }
 
@@ -63,6 +76,11 @@ impl Bar {
 
     pub fn set_battery(&mut self, battery: Battery) {
         self.battery = battery;
+        self.draw();
+    }
+
+    pub fn set_wifi(&mut self, wifi: WiFi) {
+        self.wifi = wifi;
         self.draw();
     }
 }

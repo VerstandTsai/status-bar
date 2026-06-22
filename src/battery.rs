@@ -5,7 +5,7 @@ use zbus::Connection;
 use crate::bar::Bar;
 use crate::device::DeviceProxy;
 
-#[derive(Copy, Clone)]
+#[derive(Clone, Copy)]
 pub struct Battery {
     pub percentage: usize,
     pub charging: bool

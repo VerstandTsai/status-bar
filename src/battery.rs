@@ -24,8 +24,6 @@ pub async fn listen(barc: Arc<Mutex<Bar>>) {
     let mut battery = Battery::new();
     let conn = Connection::system().await.expect("Cannot connect to DBus");
     let proxy = DeviceProxy::new(&conn).await.expect("Cannot create proxy");
-    battery.percentage = proxy.percentage().await.unwrap() as usize;
-    barc.lock().unwrap().set_battery(battery);
     let mut percentage_stream = proxy.receive_percentage_changed().await;
     let mut state_stream = proxy.receive_state_changed().await;
     loop {

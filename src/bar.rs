@@ -8,7 +8,7 @@ pub struct Bar {
     n_workspaces: usize,
     workspace_id: usize,
     battery: Battery,
-    wifi: WiFi
+    pub wifi: WiFi
 }
 
 impl Bar {
@@ -36,6 +36,7 @@ impl Bar {
     }
 
     fn draw_wifi(&self) -> String {
+        if !self.wifi.connected { return " 󰤮 ".to_string(); }
         let icons = ["󰤟", "󰤢", "󰤥", "󰤨", "󰤨"];
         let i = self.wifi.strength / 25;
         format!(" {} {} ", icons[i as usize], self.wifi.id)
@@ -76,11 +77,6 @@ impl Bar {
 
     pub fn set_battery(&mut self, battery: Battery) {
         self.battery = battery;
-        self.draw();
-    }
-
-    pub fn set_wifi(&mut self, wifi: WiFi) {
-        self.wifi = wifi;
         self.draw();
     }
 }

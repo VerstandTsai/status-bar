@@ -8,20 +8,11 @@ use crate::network_manager::NetworkManagerProxy;
 use crate::active::ActiveProxy;
 use crate::access_point::AccessPointProxy;
 
+#[derive(Default)]
 pub struct WiFi {
     pub connected: bool,
     pub id: String,
     pub strength: u8
-}
-
-impl WiFi {
-    pub fn new() -> WiFi {
-        WiFi {
-            connected: false,
-            id: String::new(),
-            strength: 0
-        }
-    }
 }
 
 async fn listen_for_strength<'a>(

@@ -1,13 +1,14 @@
 use std::io::{prelude::*, stdout};
 use chrono::Local;
 use crate::battery::Battery;
+use crate::hypr::Hyprland;
 use crate::wifi::WiFi;
 
+#[derive(Default)]
 pub struct Bar {
     width: usize,
-    n_workspaces: usize,
-    workspace_id: usize,
-    battery: Battery,
+    pub hypr: Hyprland,
+    pub battery: Battery,
     pub wifi: WiFi
 }
 
@@ -15,17 +16,19 @@ impl Bar {
     pub fn new(width: usize) -> Bar {
         Bar {
             width: width,
-            workspace_id: 1,
-            n_workspaces: 1,
-            battery: Battery::new(),
-            wifi: WiFi::new()
+            ..Default::default()
         }
     }
 
     fn draw_workspace(&self) -> String {
+        let max_id = self.hypr.workspaces
+            .iter()
+            .map(|x| x.id)
+            .max()
+            .unwrap_or(0);
         let mut s = String::new();
-        for i in 1..self.n_workspaces + 1 {
-            s = s + if i == self.workspace_id { "  " } else { "  " };
+        for i in 1..max_id + 1 {
+            s = s + if i == self.hypr.active.id { "  " } else { "  " };
         }
         s
     }
@@ -63,21 +66,6 @@ impl Bar {
         let rpad = " ".repeat(rest - right.chars().count());
         print!("\x1b[?25l\r{left}{lpad}{center}{rpad}{right}");
         stdout().flush().unwrap();
-    }
-
-    pub fn set_workspace_id(&mut self, id: usize) {
-        self.workspace_id = id;
-        self.draw();
-    }
-
-    pub fn set_n_workspaces(&mut self, n: usize) {
-        self.n_workspaces = n;
-        self.draw();
-    }
-
-    pub fn set_battery(&mut self, battery: Battery) {
-        self.battery = battery;
-        self.draw();
     }
 }
 

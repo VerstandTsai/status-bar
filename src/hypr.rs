@@ -8,24 +8,30 @@ use crate::bar::Bar;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
-#[derive(Serialize, Deserialize)]
-struct Workspace {
-    id: usize,
-    name: String,
-    monitor: String,
+#[derive(Default, Serialize, Deserialize)]
+pub struct Workspace {
+    pub id: usize,
+    pub name: String,
+    pub monitor: String,
     #[serde(rename = "monitorID")]
-    monitor_id: u32,
-    windows: u32,
+    pub monitor_id: u32,
+    pub windows: u32,
     #[serde(rename = "hasfullscreen")]
-    has_fullscreen: bool,
+    pub has_fullscreen: bool,
     #[serde(rename = "lastwindow")]
-    last_window: String,
+    pub last_window: String,
     #[serde(rename = "lastwindowtitle")]
-    last_window_title: String,
+    pub last_window_title: String,
     #[serde(rename = "ispersistent")]
-    is_persistent: bool,
+    pub is_persistent: bool,
     #[serde(rename = "tiledLayout")]
-    tiled_layout: String
+    pub tiled_layout: String
+}
+
+#[derive(Default)]
+pub struct Hyprland {
+    pub active: Workspace,
+    pub workspaces: Vec<Workspace>
 }
 
 fn socket_prefix() -> Result<String> {
@@ -55,34 +61,24 @@ fn workspaces() -> Result<Vec<Workspace>> {
     Ok(wss)
 }
 
-fn n_workspaces() -> Result<usize> {
-    let wss = workspaces()?;
-    let max_id = wss.iter().map(|x| x.id).max().unwrap();
-    Ok(max_id)
-}
-
 pub async fn listen(barc: Arc<Mutex<Bar>>) {
-    barc.lock().unwrap().set_workspace_id(active_workspace().unwrap().id);
-    barc.lock().unwrap().set_n_workspaces(n_workspaces().unwrap());
+    barc.lock().unwrap().hypr.active = active_workspace().unwrap();
+    barc.lock().unwrap().hypr.workspaces = workspaces().unwrap();
+    barc.lock().unwrap().draw();
     let prefix = socket_prefix().expect("Cannot get Hyprland socket path");
     let path = prefix + "/.socket2.sock";
     let hyprsocket = UnixStream::connect(path)
         .expect("Cannot connect to Hyprland socket");
     for line in BufReader::new(hyprsocket).lines().map(|x| x.unwrap()) {
         let parts: Vec<&str> = line.split(">>").collect();
-        let event = parts[0];
-        let value = parts[1];
-        match event {
-            "workspace" => barc
-                .lock()
-                .unwrap()
-                .set_workspace_id(value.parse().unwrap()),
-            "createworkspace" => barc
-                .lock()
-                .unwrap()
-                .set_n_workspaces(n_workspaces().unwrap()),
+        match parts[0] {
+            "workspace" =>
+                barc.lock().unwrap().hypr.active = active_workspace().unwrap(),
+            "createworkspace" =>
+                barc.lock().unwrap().hypr.workspaces = workspaces().unwrap(),
             _ => ()
         }
+        barc.lock().unwrap().draw();
     }
 }
 

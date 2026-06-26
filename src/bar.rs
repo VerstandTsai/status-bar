@@ -35,7 +35,7 @@ impl Bar {
 
     fn draw_datetime(&self) -> String {
         let now = Local::now();
-        format!(" {} ", now.format("%Y/%m/%d (%a) %H:%M:%S"))
+        format!(" {} ", now.format("%Y/%m/%d (%a) %H:%M"))
     }
 
     fn draw_wifi(&self) -> String {

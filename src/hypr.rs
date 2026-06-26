@@ -74,7 +74,7 @@ pub async fn listen(barc: Arc<Mutex<Bar>>) {
         match parts[0] {
             "workspace" =>
                 barc.lock().unwrap().hypr.active = active_workspace().unwrap(),
-            "createworkspace" =>
+            "createworkspace" | "destroyworkspace" =>
                 barc.lock().unwrap().hypr.workspaces = workspaces().unwrap(),
             _ => ()
         }
